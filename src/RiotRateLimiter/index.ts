@@ -39,7 +39,7 @@ export class RiotRateLimiter {
     this.limitersPerPlatformId = {}
   }
 
-  public executing({url, token, resolveWithFullResponse = false}) {
+  public executing({url, method = 'GET', body = {}, token, resolveWithFullResponse = false}) {
     const {platformId, apiMethod} = RiotRateLimiter.extractPlatformIdAndMethodFromUrl(url)
 
     // IF there are no limiters set for the method yet, we do a request to sych the limits and create the needed
@@ -48,7 +48,7 @@ export class RiotRateLimiter {
       this.limitersPerPlatformId[platformId] = {}
     }
     if (!this.limitersPerPlatformId[platformId][apiMethod]) {
-      console.log('creating sync rate limimter for ', platformId, apiMethod)
+      console.log('creating sync rate limiter for ', platformId, apiMethod)
       this.limitersPerPlatformId[platformId][apiMethod] = new RateLimiter({
         limits  : [RateLimiter.createSyncRateLimit(this.debug)],
         strategy: this.strategy,
@@ -63,6 +63,8 @@ export class RiotRateLimiter {
       .scheduling((rateLimiter: RateLimiter) => {
         return this.executingScheduledCallback(rateLimiter, {
           url,
+          method,
+          body,
           token,
           resolveWithFullResponse
         })
@@ -70,15 +72,22 @@ export class RiotRateLimiter {
   }
 
   private executingScheduledCallback(rateLimiter: RateLimiter,
-                                     {url, token, resolveWithFullResponse = false}
+                                     {
+                                       url,
+                                       method,
+                                       body,
+                                       json = true,
+                                       token,
+                                       resolveWithFullResponse = false
+                                     }
   ) {
     return Bluebird.resolve().then(() => {
       if (!url) { throw new RiotRateLimiterParameterError('URL has to be provided for the ApiRequest') }
       if (!token) { throw new RiotRateLimiterParameterError('options.token has to be provided for the ApiRequest'); }
 
-      let options = {
+      const options = {
         url      : url,
-        method   : 'GET',
+        method   : method,
         headers  : {'X-Riot-Token': token},
         resolveWithFullResponse,
         transform: (body, response, resolveWithFullResponse) => {
@@ -166,6 +175,10 @@ export class RiotRateLimiter {
         }
       };
 
+      if (method === 'POST') {
+        options[body] = body
+      }
+
       return requestP(options)
         .catch(err => {
           if (err.statusCode !== 429) {
@@ -178,6 +191,8 @@ export class RiotRateLimiter {
             return rateLimiter.rescheduling((rateLimiter: RateLimiter) => {
               return this.executingScheduledCallback(rateLimiter, {
                 url,
+                method,
+                body,
                 token,
                 resolveWithFullResponse
               })
