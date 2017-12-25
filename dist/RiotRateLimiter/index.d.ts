@@ -16,12 +16,14 @@ export declare class RiotRateLimiter {
     private debug;
     private appLimits;
     constructor({strategy, debug}?: RiotRateLimiterConstructorOptions);
-    executing({url, token, resolveWithFullResponse}: {
+    executing({url, method, body, token, resolveWithFullResponse}: {
         url: any;
+        method?: string;
+        body?: {};
         token: any;
         resolveWithFullResponse?: boolean;
     }): Promise<{}>;
-    private executingScheduledCallback(rateLimiter, {url, token, resolveWithFullResponse});
+    private executingScheduledCallback(rateLimiter, {url, method, body, json, token, resolveWithFullResponse});
     private static extractPlatformIdAndMethodFromUrl(url);
     static extractRateLimitFromHeader(type: RATELIMIT_TYPE, rateLimitHeader: string): RateLimitOptions[];
     static extractRateLimitCountsFromHeader(type: RATELIMIT_TYPE, rateLimitCountHeader: string): RateLimitOptions[];
