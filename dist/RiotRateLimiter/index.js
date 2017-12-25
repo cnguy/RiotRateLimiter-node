@@ -113,7 +113,8 @@ class RiotRateLimiter {
                 }
             };
             if (method === 'POST') {
-                options[body] = body;
+                options['body'] = body;
+                options['json'] = json;
             }
             return requestP(options)
                 .catch(err => {
