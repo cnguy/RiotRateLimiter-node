@@ -112,7 +112,7 @@ class RiotRateLimiter {
                     return resolveWithFullResponse ? response : body;
                 }
             };
-            if (method === 'POST') {
+            if (method === 'POST' || method === 'PUT') {
                 options['body'] = body;
                 options['json'] = json;
             }
