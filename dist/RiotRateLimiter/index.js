@@ -38,7 +38,7 @@ class RiotRateLimiter {
             });
         });
     }
-    executingScheduledCallback(rateLimiter, { url, method, body, json = true, token, resolveWithFullResponse = false }) {
+    executingScheduledCallback(rateLimiter, { url, method, body, token, resolveWithFullResponse = false }) {
         return Bluebird.resolve().then(() => {
             if (!url) {
                 throw new RiotRateLimiterParameterError_1.RiotRateLimiterParameterError('URL has to be provided for the ApiRequest');
@@ -114,7 +114,6 @@ class RiotRateLimiter {
             };
             if (method === 'POST' || method === 'PUT') {
                 options['body'] = body;
-                options['json'] = json;
             }
             return requestP(options)
                 .catch(err => {

@@ -23,7 +23,7 @@ export declare class RiotRateLimiter {
         token: any;
         resolveWithFullResponse?: boolean;
     }): Promise<{}>;
-    private executingScheduledCallback(rateLimiter, {url, method, body, json, token, resolveWithFullResponse});
+    private executingScheduledCallback(rateLimiter, {url, method, body, token, resolveWithFullResponse});
     private static extractPlatformIdAndMethodFromUrl(url);
     static extractRateLimitFromHeader(type: RATELIMIT_TYPE, rateLimitHeader: string): RateLimitOptions[];
     static extractRateLimitCountsFromHeader(type: RATELIMIT_TYPE, rateLimitCountHeader: string): RateLimitOptions[];

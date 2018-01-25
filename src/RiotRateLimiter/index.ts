@@ -76,7 +76,6 @@ export class RiotRateLimiter {
                                        url,
                                        method,
                                        body,
-                                       json = true,
                                        token,
                                        resolveWithFullResponse = false
                                      }
@@ -177,7 +176,6 @@ export class RiotRateLimiter {
 
       if (method === 'POST' || method === 'PUT') {
         options['body'] = body
-        options['json'] = json
       }
 
       return requestP(options)
