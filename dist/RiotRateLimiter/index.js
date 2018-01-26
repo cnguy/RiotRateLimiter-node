@@ -112,8 +112,8 @@ class RiotRateLimiter {
                     return resolveWithFullResponse ? response : body;
                 }
             };
-            if (method === 'POST' || method === 'PUT') {
-                options['body'] = body;
+            if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+                options['body'] = JSON.stringify(body);
             }
             return requestP(options)
                 .catch(err => {
