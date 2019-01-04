@@ -17,7 +17,9 @@ class RiotRateLimiter {
             this.limitersPerPlatformId[platformId] = {};
         }
         if (!this.limitersPerPlatformId[platformId][apiMethod]) {
-            console.log('creating sync rate limiter for ', platformId, apiMethod);
+            if (this.debug) {
+                console.log('creating sync rate limimter for ', platformId, apiMethod);
+            }
             this.limitersPerPlatformId[platformId][apiMethod] = new RateLimiter_1.RateLimiter({
                 limits: [RateLimiter_1.RateLimiter.createSyncRateLimit(this.debug)],
                 strategy: this.strategy,
@@ -29,14 +31,14 @@ class RiotRateLimiter {
         }
         return this.limitersPerPlatformId[platformId][apiMethod]
             .scheduling((rateLimiter) => {
-            return this.executingScheduledCallback(rateLimiter, {
-                url,
-                method,
-                body,
-                token,
-                resolveWithFullResponse
+                return this.executingScheduledCallback(rateLimiter, {
+                    url,
+                    method,
+                    body,
+                    token,
+                    resolveWithFullResponse
+                });
             });
-        });
     }
     executingScheduledCallback(rateLimiter, { url, method, body, token, resolveWithFullResponse = false }) {
         return Bluebird.resolve().then(() => {
@@ -117,24 +119,24 @@ class RiotRateLimiter {
             }
             return requestP(options)
                 .catch(err => {
-                if (err.statusCode !== 429) {
-                    throw err;
-                }
-                else {
-                    if (this.debug) {
-                        console.warn('rescheduling request on ' + rateLimiter.toString());
+                    if (err.statusCode !== 429) {
+                        throw err;
                     }
-                    return rateLimiter.rescheduling((rateLimiter) => {
-                        return this.executingScheduledCallback(rateLimiter, {
-                            url,
-                            method,
-                            body,
-                            token,
-                            resolveWithFullResponse
+                    else {
+                        if (this.debug) {
+                            console.warn('rescheduling request on ' + rateLimiter.toString());
+                        }
+                        return rateLimiter.rescheduling((rateLimiter) => {
+                            return this.executingScheduledCallback(rateLimiter, {
+                                url,
+                                method,
+                                body,
+                                token,
+                                resolveWithFullResponse
+                            });
                         });
-                    });
-                }
-            });
+                    }
+                });
         });
     }
     static extractPlatformIdAndMethodFromUrl(url) {
@@ -163,18 +165,18 @@ class RiotRateLimiter {
     static extractRateLimitFromHeader(type, rateLimitHeader) {
         return rateLimitHeader.split(',')
             .map(limitString => {
-            const [requests, seconds] = limitString.split(':').map(limitString => parseInt(limitString));
-            return { requests, seconds, type };
-        });
+                const [requests, seconds] = limitString.split(':').map(limitString => parseInt(limitString));
+                return { requests, seconds, type };
+            });
     }
     static extractRateLimitCountsFromHeader(type, rateLimitCountHeader) {
         return rateLimitCountHeader
             .split(',')
             .map(limitCountString => {
-            const [count, seconds] = limitCountString.split(':')
-                .map(limitOrCountString => parseInt(limitOrCountString));
-            return { count, seconds, type };
-        });
+                const [count, seconds] = limitCountString.split(':')
+                    .map(limitOrCountString => parseInt(limitOrCountString));
+                return { count, seconds, type };
+            });
     }
     static addRequestsCountFromHeader(type, updatedLimits, rateLimitCountHeader) {
         const limitCounts = RiotRateLimiter.extractRateLimitCountsFromHeader(type, rateLimitCountHeader);

@@ -1,4 +1,4 @@
-import {RateLimiter, STRATEGY} from '../RateLimiter'
+import { RateLimiter, STRATEGY } from '../RateLimiter'
 
 const requestP = require('request-promise');
 const Bluebird = require('bluebird');
@@ -7,8 +7,8 @@ export type RiotRateLimiterConstructorOptions = { strategy?: STRATEGY, debug?: b
 export type RiotRateLimiterOptions = { limits: RateLimitOptions[], strategy: STRATEGY, platformId: string, apiMethod: string }
 
 
-import {RiotRateLimiterParameterError} from '../errors/RiotRateLimiterParameterError';
-import {RateLimit, RATELIMIT_INIT_SECONDS, RATELIMIT_TYPE, RateLimitOptions} from '../RateLimit/index';
+import { RiotRateLimiterParameterError } from '../errors/RiotRateLimiterParameterError';
+import { RateLimit, RATELIMIT_INIT_SECONDS, RATELIMIT_TYPE, RateLimitOptions } from '../RateLimit/index';
 
 export class RiotRateLimiter {
 
@@ -32,15 +32,15 @@ export class RiotRateLimiter {
   private appLimits: RateLimit[];
 
   // TODO: do we even need the input limits? // propably only as fallback in case there are headers missing
-  constructor({strategy = STRATEGY.SPREAD, debug = false}: RiotRateLimiterConstructorOptions = {}) {
+  constructor({ strategy = STRATEGY.SPREAD, debug = false }: RiotRateLimiterConstructorOptions = {}) {
     this.strategy = strategy
-    this.debug    = debug
+    this.debug = debug
 
     this.limitersPerPlatformId = {}
   }
 
-  public executing({url, method = 'GET', body = {}, token, resolveWithFullResponse = false}) {
-    const {platformId, apiMethod} = RiotRateLimiter.extractPlatformIdAndMethodFromUrl(url)
+  public executing({ url, method = 'GET', body = {}, token, resolveWithFullResponse = false }) {
+    const { platformId, apiMethod } = RiotRateLimiter.extractPlatformIdAndMethodFromUrl(url)
 
     // IF there are no limiters set for the method yet, we do a request to sych the limits and create the needed
     // limiters
@@ -48,11 +48,13 @@ export class RiotRateLimiter {
       this.limitersPerPlatformId[platformId] = {}
     }
     if (!this.limitersPerPlatformId[platformId][apiMethod]) {
-      console.log('creating sync rate limiter for ', platformId, apiMethod)
+      if (this.debug) {
+        console.log('creating sync rate limimter for ', platformId, apiMethod)
+      }
       this.limitersPerPlatformId[platformId][apiMethod] = new RateLimiter({
-        limits  : [RateLimiter.createSyncRateLimit(this.debug)],
+        limits: [RateLimiter.createSyncRateLimit(this.debug)],
         strategy: this.strategy,
-        debug   : this.debug
+        debug: this.debug
       })
       if (this.debug) {
         console.log('RateLimiterChain for init request created\r\n' + this.limitersPerPlatformId[platformId][apiMethod].toString())
@@ -72,22 +74,22 @@ export class RiotRateLimiter {
   }
 
   private executingScheduledCallback(rateLimiter: RateLimiter,
-                                     {
-                                       url,
-                                       method,
-                                       body,
-                                       token,
-                                       resolveWithFullResponse = false
-                                     }
+    {
+      url,
+      method,
+      body,
+      token,
+      resolveWithFullResponse = false
+    }
   ) {
     return Bluebird.resolve().then(() => {
       if (!url) { throw new RiotRateLimiterParameterError('URL has to be provided for the ApiRequest') }
       if (!token) { throw new RiotRateLimiterParameterError('options.token has to be provided for the ApiRequest'); }
 
       const options = {
-        url      : url,
-        method   : method,
-        headers  : {'X-Riot-Token': token},
+        url: url,
+        method: method,
+        headers: { 'X-Riot-Token': token },
         resolveWithFullResponse,
         transform: (body, response, resolveWithFullResponse) => {
           let updatedLimits: RateLimitOptions[] = []
@@ -165,7 +167,7 @@ export class RiotRateLimiter {
               }
             }
 
-            rateLimiter.backoff({retryAfterMS})
+            rateLimiter.backoff({ retryAfterMS })
             return response
           }
 
@@ -210,7 +212,7 @@ export class RiotRateLimiter {
     // matches "by-something/whatever/",  "by-something/whatever" and "by-something/whatever?moreStuff"
     let regex = /by-.*?\/(.*?)\/|by-.*?\/(.*?$)/g
 
-    let regexResult       = regex.exec(url)
+    let regexResult = regex.exec(url)
     const regexResultsArr = []
     while (regexResult !== null) {
       regexResultsArr.push(regexResult)
@@ -220,7 +222,7 @@ export class RiotRateLimiter {
     regexResultsArr.reverse().forEach(result => {
       // find first slash -> beginning of parameter
       const slashIndex = apiMethod.indexOf('/', result.index)
-      apiMethod        = apiMethod.substring(0, slashIndex + 1) + apiMethod.substring(result.index + result[0].length)
+      apiMethod = apiMethod.substring(0, slashIndex + 1) + apiMethod.substring(result.index + result[0].length)
     })
 
     apiMethod = apiMethod
@@ -229,31 +231,31 @@ export class RiotRateLimiter {
 
     apiMethod = apiMethod.substring(apiMethod.search(/\w\/\w/) + 1); // cut off host before first / after //
     if (!platformId || !apiMethod) throw new Error('Could not extract PlatformId and Method from url: ' + url)
-    return {platformId, apiMethod}
+    return { platformId, apiMethod }
   }
 
   public static extractRateLimitFromHeader(type: RATELIMIT_TYPE, rateLimitHeader: string): RateLimitOptions[] {
     return rateLimitHeader.split(',')
-                          .map(limitString => {
-                            const [requests, seconds] = limitString.split(':').map(limitString => parseInt(limitString))
-                            return <RateLimitOptions>{requests, seconds, type}
-                          })
+      .map(limitString => {
+        const [requests, seconds] = limitString.split(':').map(limitString => parseInt(limitString))
+        return <RateLimitOptions>{ requests, seconds, type }
+      })
   }
 
   public static extractRateLimitCountsFromHeader(type: RATELIMIT_TYPE,
-                                                 rateLimitCountHeader: string
+    rateLimitCountHeader: string
   ): RateLimitOptions[] {
     return rateLimitCountHeader
       .split(',')
       .map(limitCountString => {
         const [count, seconds] = limitCountString.split(':')
-                                                 .map(limitOrCountString => parseInt(limitOrCountString))
-        return <RateLimitOptions>{count, seconds, type}
+          .map(limitOrCountString => parseInt(limitOrCountString))
+        return <RateLimitOptions>{ count, seconds, type }
       })
   }
 
   private static addRequestsCountFromHeader(type: RATELIMIT_TYPE, updatedLimits: RateLimitOptions[],
-                                            rateLimitCountHeader: string
+    rateLimitCountHeader: string
   ): RateLimitOptions[] {
     const limitCounts = RiotRateLimiter.extractRateLimitCountsFromHeader(type, rateLimitCountHeader)
 
@@ -272,7 +274,7 @@ export class RiotRateLimiter {
    *  @param url a full API url */
   toString(url: string) {
     if (url) {
-      const {platformId, apiMethod} = RiotRateLimiter.extractPlatformIdAndMethodFromUrl(url)
+      const { platformId, apiMethod } = RiotRateLimiter.extractPlatformIdAndMethodFromUrl(url)
       if (this.limitersPerPlatformId[platformId][apiMethod]) {
         return this.limitersPerPlatformId[platformId][apiMethod].toString()
       }
@@ -301,7 +303,7 @@ export class RiotRateLimiter {
       throw new RiotRateLimiterParameterError('platformId is required')
     }
 
-    platformId                = platformId.toLowerCase()
+    platformId = platformId.toLowerCase()
     const limitersForPlatform = this.limitersPerPlatformId[platformId]
     if (!limitersForPlatform) {
       return {}
@@ -326,7 +328,7 @@ export class RiotRateLimiter {
 
     for (let platformId in this.limitersPerPlatformId) {
       const limitersForPlatform = this.limitersPerPlatformId[platformId]
-      if (!limitersForPlatform) { return limits}
+      if (!limitersForPlatform) { return limits }
 
       for (let apiMethod in limitersForPlatform) {
         limits[platformId][apiMethod] = limitersForPlatform[apiMethod].getLimits()
@@ -350,7 +352,7 @@ export class RiotRateLimiter {
 
     // if no limits set yet, just set
     if (!this.appLimits || this.appLimits.length === 0) {
-      this.appLimits = updateOptionsCopy.map(options => new RateLimit(options, {debug: this.debug}))
+      this.appLimits = updateOptionsCopy.map(options => new RateLimit(options, { debug: this.debug }))
     } else {
       // else update the limits acchordingly
 
@@ -375,7 +377,7 @@ export class RiotRateLimiter {
       // adding additional limits if neccessary
       if (updateOptionsCopy.length > 0) {
         this.appLimits = this.appLimits.concat(updateOptionsCopy.map(
-          options => new RateLimit(options, {debug: this.debug})))
+          options => new RateLimit(options, { debug: this.debug })))
       }
     }
   }

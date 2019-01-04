@@ -1,6 +1,6 @@
 {
   "name": "riot-ratelimiter-temp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A temporary fork of ColorfulStans ratelimiter with POST/PUT?PATCH functionality. Will be used until I write proper tests for the code I have added.",
   "keywords": [
     "TypeScript",
